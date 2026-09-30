@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Raven AI</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#07090d;color:#e8edf5;font-family:Inter,system-ui,-apple-system,sans-serif;min-height:100vh;overflow:hidden}body:before{content:"";position:fixed;inset:-20%;background:radial-gradient(circle at 50% 35%,#18243a 0,transparent 28%),radial-gradient(circle at 80% 80%,#111827 0,transparent 30%);pointer-events:none}.app{position:relative;height:100vh;display:flex;flex-direction:column;max-width:1100px;margin:auto}.top{height:72px;display:flex;align-items:center;justify-content:space-between;padding:0 24px;border-bottom:1px solid #202733;background:#090c12cc;backdrop-filter:blur(14px)}.brand{display:flex;gap:12px;align-items:center;font-weight:800;letter-spacing:.5px}.orb{width:38px;height:38px;border-radius:50%;border:1px solid #718096;box-shadow:0 0 28px #4b6388;display:grid;place-items:center;background:radial-gradient(circle,#dbeafe 0 4%,#334155 25%,#0b1220 65%)}.status{font-size:12px;color:#8f9bad}.main{flex:1;display:flex;flex-direction:column;min-height:0}.hero{text-align:center;padding:48px 20px 22px}.hero h1{font-size:clamp(32px,6vw,58px);margin:0 0 8px}.hero p{margin:0;color:#8994a5}.chat{flex:1;overflow:auto;padding:10px 24px 150px}.bubble{max-width:760px;margin:12px auto;padding:15px 18px;border:1px solid #252d3a;border-radius:18px;background:#0d121a}.bubble.user{background:#121a27}.name{font-size:11px;text-transform:uppercase;letter-spacing:1px;color:#7f8ca1;margin-bottom:6px}.composer{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);width:min(900px,calc(100% - 32px));padding:10px;border:1px solid #303948;border-radius:22px;background:#0b1018e8;backdrop-filter:blur(18px);display:flex;gap:8px;box-shadow:0 15px 50px #0008}.composer input{flex:1;background:transparent;border:0;outline:0;color:white;font-size:16px;padding:10px}.btn{border:1px solid #344054;background:#121925;color:#dbe4f0;border-radius:14px;padding:0 15px;cursor:pointer}.btn:hover{background:#1a2434}.send{width:48px}.chips{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin-top:22px}.chip{border:1px solid #2b3544;background:#0e141e;color:#aeb9c9;border-radius:999px;padding:9px 13px;cursor:pointer;font-size:13px}@media(max-width:600px){.hero{padding-top:32px}.top{padding:0 16px}.chat{padding-left:12px;padding-right:12px}.composer{bottom:12px}}
+</style>
+</head>
+<body><div class="app">
+<header class="top"><div class="brand"><div class="orb">R</div><span>RAVEN AI</span></div><div class="status" id="status">● sistema online</div></header>
+<main class="main"><section class="hero"><h1>Olá. Eu sou o Raven.</h1><p>Seu assistente pessoal. Agora conectado à IA.</p><div class="chips"><button class="chip" data-q="O que você consegue fazer?">O que você consegue fazer?</button><button class="chip" data-q="Me ajude a organizar meu dia">Organizar meu dia</button><button class="chip" data-q="Quem é você?">Quem é você?</button></div></section><section class="chat" id="chat"></section></main>
+<form class="composer" id="form"><button type="button" class="btn" id="mic" title="Entrada por voz">🎙️</button><input id="input" autocomplete="off" placeholder="Fale ou escreva para o Raven..."/><button class="btn send" type="submit">➤</button></form>
+</div>
+<script>
+const chat=document.getElementById('chat'),input=document.getElementById('input'),statusEl=document.getElementById('status');
+const messages=[];
+function escapeHtml(text){return String(text).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>')}
+function add(text,who='raven'){const b=document.createElement('div');b.className='bubble '+(who==='user'?'user':'');b.innerHTML='<div class="name">'+(who==='user'?'Você':'Raven')+'</div><div>'+escapeHtml(text)+'</div>';chat.appendChild(b);chat.scrollTop=chat.scrollHeight}
+function setBusy(busy){statusEl.textContent=busy?'● pensando...':'● sistema online'}
+async function askRaven(q){
+  messages.push({role:'user',content:q});
+  const recent=messages.slice(-12);
+  const res=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:recent})});
+  const data=await res.json().catch(()=>({}));
+  if(!res.ok) throw new Error(data.error||'Não foi possível falar com o servidor.');
+  const answer=data.text||'Não recebi uma resposta da IA.';
+  messages.push({role:'assistant',content:answer});
+  return answer;
+}
+document.getElementById('form').onsubmit=async e=>{e.preventDefault();let q=input.value.trim();if(!q)return;add(q,'user');input.value='';setBusy(true);try{add(await askRaven(q));}catch(err){add('Não consegui falar com meu servidor agora. Verifique a implantação e a chave da API no Vercel.');console.error(err)}finally{setBusy(false)}};
+document.querySelectorAll('.chip').forEach(c=>c.onclick=()=>{input.value=c.dataset.q;document.getElementById('form').requestSubmit()});
+const SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(SR){const r=new SR();r.lang='pt-BR';r.onresult=e=>{input.value=e.results[0][0].transcript;document.getElementById('form').requestSubmit()};document.getElementById('mic').onclick=()=>r.start()}else document.getElementById('mic').onclick=()=>alert('Reconhecimento de voz não está disponível neste navegador.');
+add('Sistema iniciado. Sou o Raven AI. Agora posso conversar com a IA. O que vamos construir hoje?');
+</script></body></html>
