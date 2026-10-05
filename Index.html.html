@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Raven AI</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#070a10;color:#e8edf7;font-family:system-ui,-apple-system,sans-serif}
+.app{min-height:100vh;display:flex;flex-direction:column}.top{height:64px;border-bottom:1px solid #1b2330;display:flex;align-items:center;justify-content:space-between;padding:0 22px}
+.brand{display:flex;align-items:center;gap:10px;font-weight:700}.logo{width:28px;height:28px;border:1px solid #71809a;border-radius:50%;display:grid;place-items:center}
+.status{font-size:12px;color:#8793a8}.main{width:min(900px,94%);margin:auto;display:flex;flex-direction:column;padding:35px 0}
+.hero{text-align:center;margin-bottom:25px}.hero h1{font-size:clamp(30px,6vw,52px);margin:0 0 10px}.hero p{color:#8d98aa}
+.chips{display:flex;justify-content:center;gap:8px;flex-wrap:wrap}.chip{border:1px solid #273142;background:#0d121b;color:#c5cede;border-radius:999px;padding:8px 12px}
+.chat{display:flex;flex-direction:column;gap:10px;max-height:50vh;overflow:auto}.msg{max-width:82%;padding:11px 14px;border-radius:15px;line-height:1.45;white-space:pre-wrap}.user{align-self:flex-end;background:#1b2638}.raven{align-self:flex-start;background:#101722;border:1px solid #1d2736}
+.composer{display:flex;gap:8px;margin-top:14px}.composer input{flex:1;min-width:0;background:#0c1119;border:1px solid #273142;color:#fff;border-radius:14px;padding:14px;outline:none}.composer button{border:1px solid #273142;background:#111823;color:#fff;border-radius:14px;padding:0 16px}
+</style>
+</head>
+<body>
+<div class="app">
+<header class="top"><div class="brand"><div class="logo">R</div><span>RAVEN AI</span></div><div class="status" id="status">● pronto</div></header>
+<main class="main">
+<section class="hero"><h1>Olá. Eu sou o Raven.</h1><p>Seu assistente pessoal, agora conectado à IA.</p>
+<div class="chips"><button class="chip" type="button" data-q="O que você consegue fazer?">O que você consegue fazer?</button><button class="chip" type="button" data-q="Organizar meu dia">Organizar meu dia</button><button class="chip" type="button" data-q="Quem é você?">Quem é você?</button></div></section>
+<section class="chat" id="chat" aria-live="polite"></section>
+<form class="composer" id="form"><input id="input" autocomplete="off" placeholder="Fale ou escreva para o Raven..."><button id="send" type="submit">Enviar</button></form>
+</main></div>
+<script>
+(function(){
+const chat=document.getElementById("chat"),form=document.getElementById("form"),input=document.getElementById("input"),send=document.getElementById("send"),status=document.getElementById("status"),messages=[];
+function add(text,who){const el=document.createElement("div");el.className="msg "+(who==="user"?"user":"raven");el.textContent=text;chat.appendChild(el);chat.scrollTop=chat.scrollHeight}
+function busy(v){send.disabled=v;input.disabled=v;status.textContent=v?"● pensando...":"● pronto"}
+async function askRaven(q){
+messages.push({role:"user",content:q});
+const res=await fetch("/api/chat",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({messages:messages.slice(-12)})});
+let data={};try{data=await res.json()}catch(e){}
+if(!res.ok)throw new Error(data.error||("Servidor respondeu HTTP "+res.status));
+const answer=data.text||"A IA respondeu sem texto.";messages.push({role:"assistant",content:answer});return answer
+}
+add("Sistema iniciado. Sou o Raven AI. Agora posso conversar com você. O que vamos construir hoje?","raven");
+form.addEventListener("submit",async e=>{e.preventDefault();const q=input.value.trim();if(!q)return;add(q,"user");input.value="";busy(true);try{add(await askRaven(q),"raven")}catch(err){add("Não consegui falar com o servidor.\n\n"+(err.message||"Erro desconhecido."),"raven");console.error(err)}finally{busy(false);input.focus()}});
+document.querySelectorAll(".chip").forEach(b=>b.addEventListener("click",()=>{input.value=b.dataset.q;input.focus()}));
+})();
+</script>
+</body>
+</html>
