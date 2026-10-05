@@ -28,7 +28,7 @@ async function askRaven(q){
   messages.push({role:'assistant',content:answer});
   return answer;
 }
-}catch(err){add('ERRO: '+err.message);}
+}catch(err){add('Não consegui falar com meu servidor agora.');}
 document.querySelectorAll('.chip').forEach(c=>c.onclick=()=>{input.value=c.dataset.q;document.getElementById('form').requestSubmit()});
 const SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(SR){const r=new SR();r.lang='pt-BR';r.onresult=e=>{input.value=e.results[0][0].transcript;document.getElementById('form').requestSubmit()};document.getElementById('mic').onclick=()=>r.start()}else document.getElementById('mic').onclick=()=>alert('Reconhecimento de voz não está disponível neste navegador.');
 add('Sistema iniciado. Sou o Raven AI. Agora posso conversar com a IA. O que vamos construir hoje?');
