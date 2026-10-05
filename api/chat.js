@@ -7,9 +7,10 @@ module.exports = async function handler(req, res) {
 
   const apiKey = process.env.OPENAI_API_KEY;
 
+  // Diagnóstico: verifica se a variável chegou à função
   if (!apiKey) {
     return res.status(500).json({
-      error: "OPENAI_API_KEY não está configurada no Vercel."
+      error: "DIAGNÓSTICO: OPENAI_API_KEY não chegou à função."
     });
   }
 
@@ -19,22 +20,13 @@ module.exports = async function handler(req, res) {
         ? JSON.parse(req.body)
         : (req.body || {});
 
-    const incoming = Array.isArray(body.messages)
+    const messages = Array.isArray(body.messages)
       ? body.messages
       : [];
 
-    const messages = incoming
-      .filter(
-        (m) =>
-          m &&
-          (m.role === "user" || m.role === "assistant") &&
-          typeof m.content === "string"
-      )
-      .slice(-12);
-
     if (!messages.length) {
       return res.status(400).json({
-        error: "Nenhuma mensagem foi enviada."
+        error: "DIAGNÓSTICO: nenhuma mensagem recebida."
       });
     }
 
@@ -50,7 +42,7 @@ module.exports = async function handler(req, res) {
           model: "gpt-6-luna",
           instructions:
             "Você é o Raven AI, um assistente pessoal em português do Brasil. Responda de forma natural, útil e objetiva.",
-          input: messages,
+          input: messages.slice(-12),
           max_output_tokens: 700
         })
       }
@@ -59,20 +51,16 @@ module.exports = async function handler(req, res) {
     const data = await response.json();
 
     if (!response.ok) {
-      console.error("Erro da OpenAI:", data);
+      console.error("ERRO OPENAI:", data);
 
       return res.status(500).json({
         error:
-          data?.error?.message ||
-          "A OpenAI retornou um erro."
+          "DIAGNÓSTICO OPENAI: " +
+          (data?.error?.message || "erro desconhecido")
       });
     }
 
-    let text = "";
-
-    if (typeof data.output_text === "string") {
-      text = data.output_text;
-    }
+    let text = data.output_text || "";
 
     if (!text && Array.isArray(data.output)) {
       for (const item of data.output) {
@@ -89,18 +77,17 @@ module.exports = async function handler(req, res) {
       }
     }
 
-    if (!text) {
-      text = "A IA respondeu, mas não retornou texto.";
-    }
-
     return res.status(200).json({
-      text
+      text: text || "A IA respondeu sem texto."
     });
+
   } catch (error) {
-    console.error("Erro interno:", error);
+    console.error("ERRO INTERNO:", error);
 
     return res.status(500).json({
-      error: error?.message || "Erro interno no servidor."
+      error:
+        "DIAGNÓSTICO SERVIDOR: " +
+        (error?.message || "erro desconhecido")
     });
   }
 };
