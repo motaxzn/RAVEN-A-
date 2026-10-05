@@ -18,7 +18,7 @@ const messages=[];
 function escapeHtml(text){return String(text).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>')}
 function add(text,who='raven'){const b=document.createElement('div');b.className='bubble '+(who==='user'?'user':'');b.innerHTML='<div class="name">'+(who==='user'?'Você':'Raven')+'</div><div>'+escapeHtml(text)+'</div>';chat.appendChild(b);chat.scrollTop=chat.scrollHeight}
 function setBusy(busy){statusEl.textContent=busy?'● pensando...':'● sistema online'}
-async function askRaven(q){
+async function askRaven(q){try{
   messages.push({role:'user',content:q});
   const recent=messages.slice(-12);
   const res=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:recent})});
